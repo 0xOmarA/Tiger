@@ -146,7 +146,20 @@ namespace Tiger
             //Sorting the packages inside the dictionary in order of the patch_id, so that its [0, 1, 2, .....] so the 
             //packages are ordered in ascending order.
             foreach(KeyValuePair<string, List<Package>> dictionary_entry in package_lookup_temp)
+            {
+                // Sorting the entries according to their patch IDs
                 dictionary_entry.Value.Sort((x, y) => x.patch_id.CompareTo(y.patch_id));
+
+                // Getting a list of all of the patch IDs
+                // from foo in fooList where foo.Bar > 10 select Foo.Name.ToUpper()
+                List<uint> patch_ids = (from pkg in dictionary_entry.Value where true select pkg.patch_id).ToList();
+                List<uint> missing_patch_ids = (from num in Enumerable.Range(0, (int)patch_ids.Max()).ToList() where !patch_ids.Contains((uint)num) select (uint)num).ToList();
+
+                // Adding a NULL for the missing patch ids
+                foreach (int missing_patch_id in missing_patch_ids)
+                    dictionary_entry.Value.Insert(missing_patch_id, null);
+            }
+                
 
 
             return package_lookup_temp;
@@ -160,10 +173,12 @@ namespace Tiger
         /// <returns>A dictionary with the key as the package id and a value of a list of all packages with that name</returns>
         /// <remarks>
         /// The dictionary returned has the following format. 
+        /// <code>
         /// {
         ///     0x0932: [Package("w64_ui_0932_0.pkg"), Package("w64_ui_0932_1.pkg")],
         ///     0x0324: [Package("w64_audio_0324_0.pkg"), Package("w64_audio_0324_1.pkg"), Package("w64_audio_0324_2.pkg")],
         /// }
+        /// </code>
         /// Thus, the master package is the package always at the end
         /// </remarks>
         private Dictionary<uint, List<Package>> generate_packages_id_lookup_table()
@@ -171,7 +186,7 @@ namespace Tiger
             Dictionary<uint, List<Package>> temp_lookup = new Dictionary<uint, List<Package>>();
 
             foreach (KeyValuePair<string, List<Package>> dictionary_entry in packages_lookup_table)
-                temp_lookup[dictionary_entry.Value[0].package_id] = dictionary_entry.Value;
+                temp_lookup[dictionary_entry.Value[^1].package_id] = dictionary_entry.Value;
 
             return temp_lookup;
         }
